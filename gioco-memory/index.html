@@ -1,0 +1,121 @@
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Gioco Memory</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Gioco Memory</h1>
+  <p>Mosse: <span id="moves">0</span> | Tempo: <span id="timer">0</span>s</p>
+  <div id="game" role="grid" aria-label="Griglia Memory"></div>
+  <div id="victory"></div>
+  <div id="controls">
+    <button onclick="restartGame()">Rigioca</button>
+  </div>
+
+  <script>
+    const emojis = ['🍎', '🍌', '🍓', '🍒', '🍍', '🍇'];
+    let cards = [];
+    let moves = 0;
+    let firstCard = null;
+    let lock = false;
+    let timerInterval = null;
+    let time = 0;
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      time = 0;
+      document.getElementById('timer').textContent = time;
+      timerInterval = setInterval(() => {
+        time++;
+        document.getElementById('timer').textContent = time;
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timerInterval);
+    }
+
+    function createCard(emoji, index) {
+      const card = document.createElement('div');
+      card.classList.add('card');
+      card.dataset.index = index;
+      card.dataset.emoji = emoji;
+      card.setAttribute('role', 'button');
+      card.setAttribute('aria-label', 'Carta memory');
+      card.addEventListener('click', handleClick);
+      return card;
+    }
+
+    function createBoard() {
+      cards = [...emojis, ...emojis];
+      shuffle(cards);
+      const game = document.getElementById('game');
+      game.innerHTML = '';
+      cards.forEach((emoji, index) => {
+        const card = createCard(emoji, index);
+        game.appendChild(card);
+      });
+      document.getElementById('moves').textContent = 0;
+      document.getElementById('victory').textContent = '';
+      moves = 0;
+      firstCard = null;
+      lock = false;
+      startTimer();
+    }
+
+    function checkVictory() {
+      const revealed = document.querySelectorAll('.card.revealed').length;
+      if (revealed === cards.length) {
+        stopTimer();
+        document.getElementById('victory').textContent = `Hai vinto in ${moves} mosse e ${time} secondi! 🎉`;
+      }
+    }
+
+    function handleClick(e) {
+      if (lock) return;
+      const card = e.currentTarget;
+      if (card.classList.contains('revealed')) return;
+
+      card.textContent = card.dataset.emoji;
+      card.classList.add('revealed');
+
+      if (!firstCard) {
+        firstCard = card;
+      } else {
+        moves++;
+        document.getElementById('moves').textContent = moves;
+        if (firstCard.dataset.emoji === card.dataset.emoji) {
+          firstCard = null;
+          checkVictory();
+        } else {
+          lock = true;
+          setTimeout(() => {
+            card.textContent = '';
+            card.classList.remove('revealed');
+            firstCard.textContent = '';
+            firstCard.classList.remove('revealed');
+            firstCard = null;
+            lock = false;
+          }, 1000);
+        }
+      }
+    }
+
+    function restartGame() {
+      createBoard();
+    }
+
+    createBoard();
+  </script>
+</body>
+</html>
